@@ -205,34 +205,44 @@ print 'time needed to load test set:', end - start
 
 
 #------------------------------------------------------------------------------ 
-# set parameters and equations
+# set parameters and equations # 매개변수 및 방정식 설정
 #------------------------------------------------------------------------------
 test_mode = True
 
-b.set_global_preferences( 
+b.set_global_preferences(
+                        # 범위 내에서 제공되거나 정의되지 않은 경우 사용할 기본 시계입니다.
                         defaultclock = b.Clock(dt=0.5*b.ms), # The default clock to use if none is provided or defined in any enclosing scope.
+                        # 함수가 정의된 경우 인라인 컴파일 C 코드를 사용해야 하는지 여부를 정의합니다.
                         useweave = True, # Defines whether or not functions should use inlined compiled C code where defined.
-                        gcc_options = ['-ffast-math -march=native'],  # Defines the compiler switches passed to the gcc compiler. 
+                        # gcc 컴파일러에 전달된 컴파일러 스위치를 정의합니다.
+                        gcc_options = ['-ffast-math -march=native'],  # Defines the compiler switches passed to the gcc compiler.
                         #For gcc versions 4.2+ we recommend using -march=native. By default, the -ffast-math optimizations are turned on 
+                        # gcc 버전 4.2+의 경우 -march=limited를 사용하는 것이 좋습니다. 기본적으로 -fast-math 최적화가 켜져 있습니다.
+                        # 실험 코드 생성 지원의 사용 여부.
                         usecodegen = True,  # Whether or not to use experimental code generation support.
+                        # 실험 코드 생성 지원에 C를 사용할지 여부.
                         usecodegenweave = True,  # Whether or not to use C with experimental code generation support.
+                        # 상태 업데이트기에서 실험 코드 생성 지원 사용 여부.
                         usecodegenstateupdate = True,  # Whether or not to use experimental code generation support on state updaters.
+                        # 임계값에 실험 코드 생성 지원 사용 여부.
                         usecodegenthreshold = False,  # Whether or not to use experimental code generation support on thresholds.
+                        # 실험적인 새 C 전파 함수의 사용 여부.
                         usenewpropagate = True,  # Whether or not to use experimental new C propagation functions.
+                        # 실험용 새 CSTDP 사용 여부.
                         usecstdp = True,  # Whether or not to use experimental new C STDP.
                        ) 
 
 
-np.random.seed(0)
+np.random.seed(0) # 동일한 난수 생성
 data_path = './'
-if test_mode:
+if test_mode:   # test 모드일 경우
     weight_path = data_path + 'weights/'
-    num_examples = 10000 * 1
-    use_testing_set = True
-    do_plot_performance = False
-    record_spikes = True
-    ee_STDP_on = False
-    update_interval = num_examples
+    num_examples = 10000 * 1    # num_examples = 10000
+    use_testing_set = True  # 테스트 셋 사용
+    do_plot_performance = False # 성능 표시
+    record_spikes = True    # 스파이크 기록
+    ee_STDP_on = False  #
+    update_interval = num_examples # 업데이트 간격
 else:
     weight_path = data_path + 'random/'  
     num_examples = 60000 * 3
@@ -250,9 +260,9 @@ n_input = 784
 n_e = 400
 n_i = n_e 
 single_example_time =   0.35 * b.second #
-resting_time = 0.15 * b.second
+resting_time = 0.15 * b.second # 휴식 시간
 runtime = num_examples * (single_example_time + resting_time)
-if num_examples <= 10000:    
+if num_examples <= 10000:    # num_examples가 10000보다 작거나 같을 경우
     update_interval = num_examples
     weight_update_interval = 20
 else:
@@ -307,10 +317,10 @@ else:
 offset = 20.0*b.mV
 v_thresh_e = '(v>(theta - offset + ' + str(v_thresh_e) + ')) * (timer>refrac_e)'
 
-
+# amp(amplitude) 진폭
 neuron_eqs_e = '''
         dv/dt = ((v_rest_e - v) + (I_synE+I_synI) / nS) / (100*ms)  : volt
-        I_synE = ge * nS *         -v                           : amp
+        I_synE = ge * nS *         -v                           : amp   
         I_synI = gi * nS * (-100.*mV-v)                          : amp
         dge/dt = -ge/(1.0*ms)                                   : 1
         dgi/dt = -gi/(2.0*ms)                                  : 1
@@ -348,6 +358,7 @@ spike_monitors = {}
 spike_counters = {}
 result_monitor = np.zeros((update_interval,n_e))
 
+# scr_e = v_rest_e = -65. * b.mV
 neuron_groups['e'] = b.NeuronGroup(n_e*len(population_names), neuron_eqs_e, threshold= v_thresh_e, refractory= refrac_e, reset= scr_e, 
                                    compile = True, freeze = True)
 neuron_groups['i'] = b.NeuronGroup(n_i*len(population_names), neuron_eqs_i, threshold= v_thresh_i, refractory= refrac_i, reset= v_reset_i, 
@@ -355,8 +366,9 @@ neuron_groups['i'] = b.NeuronGroup(n_i*len(population_names), neuron_eqs_i, thre
 
 
 #------------------------------------------------------------------------------ 
-# create network population and recurrent connections
-#------------------------------------------------------------------------------ 
+# create network population and recurrent connections # 네트워크 모집단 및 반복 연결 생성
+#------------------------------------------------------------------------------
+# population_names = ['A']
 for name in population_names:
     print 'create neuron group', name
     
