@@ -304,10 +304,10 @@ dt_clock            = 0.5 * b.ms  # Need to change the default clock option in g
 num_timesteps       = single_example_time / dt_clock # 안 씀
 runtime             = num_examples * (single_example_time + resting_time)
 
-use_testing_set       = True
+use_testing_set       = False
 use_weight_dependence = True  # Unused
 use_classic_STDP      = True  # Unused
-test_mode             = True
+test_mode             = False
 tag_mode              = False
 
 if num_examples < 10000:
@@ -331,7 +331,7 @@ if test_mode:
        num_examples_total = len(testing['y'])
     else:
        num_examples_total = len(training['y'])
-    num_examples        = 10000
+    num_examples        = 10 ## 10000
     update_interval     = 1000
 
 elif tag_mode:
@@ -613,15 +613,6 @@ for i,name in enumerate(input_population_names):  # input_population_names: X
         input_groups[name + 'e'] = b.PoissonGroup(n_input, 0*Hz)
     rate_monitors[name+'e'] = b.PopulationRateMonitor(input_groups[name+'e'])
 
-model = 'w : 1'
-pre = 'ge_post += w'
-post = ''
-
-if not test_mode:
-    print( 'create STDP for connection XeAe')
-    model += eqs_stdp_ee
-    pre += '; ' + eqs_stdp_pre_ee
-    post = eqs_stdp_post_ee # 여기까지 add
 '''
 for name in input_connection_names:    # input_connection_names: XA
     for connType in input_conn_names:  # input_conn_names      : ee_input
@@ -657,6 +648,8 @@ for name in input_connection_names:    # input_connection_names: XA
        stdp_methods[name[0]+'e'+name[1]+'e'] = b.STDP(connections[name[0]+'e'+name[1]+'e'], eqs = eqs_stdp_ee, pre = eqs_stdp_pre_ee,
                                                       post = eqs_stdp_post_ee, wmin = wmin_ee, wmax = wmax_ee)
 '''
+input_groups['Xe'] = b.PoissonGroup(n_input, 0*Hz)
+
 print( 'create connections between X and A')
 if test_mode:
     weightMatrix = get_matrix_from_file(data_path + 'weights/XeAe.npy', n_input, n_e)
