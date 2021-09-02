@@ -666,7 +666,7 @@ if not test_mode:
     post = eqs_stdp_post_ee
 
 connections['XeAe'] = b.Synapses(input_groups['Xe'], neuron_groups['Ae'],
-                                            model=model, on_pre=pre, on_post=post)
+                                            model='w : 1', on_pre='ge_post += w')
 minDelay = 0*b.ms
 maxDelay = 10*b.ms
 deltaDelay = maxDelay - minDelay
