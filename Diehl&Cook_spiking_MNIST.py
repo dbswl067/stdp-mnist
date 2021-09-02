@@ -259,9 +259,9 @@ ending = ''
 n_input = 784
 n_e = 400
 n_i = n_e 
-single_example_time =   0.35 * b.second #
-resting_time = 0.15 * b.second # 휴식 시간
-runtime = num_examples * (single_example_time + resting_time)
+single_example_time =   0.35 * b.second # 350ms
+resting_time = 0.15 * b.second # 휴식 시간 150ms
+runtime = num_examples * (single_example_time + resting_time) # 예시 개수 * (350 + 150)
 if num_examples <= 10000:    # num_examples가 10000보다 작거나 같을 경우
     update_interval = num_examples
     weight_update_interval = 20
@@ -317,7 +317,7 @@ else:
 offset = 20.0*b.mV
 v_thresh_e = '(v>(theta - offset + ' + str(v_thresh_e) + ')) * (timer>refrac_e)'
 
-# amp(amplitude) 진폭
+# amp(amplitude) 진폭 # Tge = 흥분성 시냅스 후 전위의 시간 상수  # Tgi = 억제성 시냅스 후 전위의 시간 상수
 neuron_eqs_e = '''
         dv/dt = ((v_rest_e - v) + (I_synE+I_synI) / nS) / (100*ms)  : volt
         I_synE = ge * nS *         -v                           : amp   
@@ -374,7 +374,8 @@ for name in population_names:
     
     neuron_groups[name+'e'] = neuron_groups['e'].subgroup(n_e)
     neuron_groups[name+'i'] = neuron_groups['i'].subgroup(n_i)
-    
+
+    # 해당 뉴런그룹의 볼트 설정
     neuron_groups[name+'e'].v = v_rest_e - 40. * b.mV
     neuron_groups[name+'i'].v = v_rest_i - 40. * b.mV
     if test_mode or weight_path[-8:] == 'weights/':
@@ -383,6 +384,7 @@ for name in population_names:
         neuron_groups['e'].theta = np.ones((n_e)) * 20.0*b.mV
     
     print 'create recurrent connections'
+    # recurrent_conn_names = ['ei', 'ie']
     for conn_type in recurrent_conn_names:
         connName = name+conn_type[0]+name+conn_type[1]
         weightMatrix = get_matrix_from_file(weight_path + '../random/' + connName + ending + '.npy')
@@ -395,17 +397,17 @@ for name in population_names:
             stdp_methods[name+'e'+name+'e'] = b.STDP(connections[name+'e'+name+'e'], eqs=eqs_stdp_ee, pre = eqs_stdp_pre_ee, 
                                                            post = eqs_stdp_post_ee, wmin=0., wmax= wmax_ee)
 
-    print 'create monitors for', name
+    print 'create monitors for', name   # PopulationRateMonitor = 순간 firing rate를 기록하는 클래스
     rate_monitors[name+'e'] = b.PopulationRateMonitor(neuron_groups[name+'e'], bin = (single_example_time+resting_time)/b.second)
     rate_monitors[name+'i'] = b.PopulationRateMonitor(neuron_groups[name+'i'], bin = (single_example_time+resting_time)/b.second)
     spike_counters[name+'e'] = b.SpikeCounter(neuron_groups[name+'e'])
     
-    if record_spikes:
+    if record_spikes:       # SpikeMonitor = 스파이크를 기록하는 클래스
         spike_monitors[name+'e'] = b.SpikeMonitor(neuron_groups[name+'e'])
         spike_monitors[name+'i'] = b.SpikeMonitor(neuron_groups[name+'i'])
 
 if record_spikes:
-    b.figure(fig_num)
+    b.figure(fig_num) # fig_num = 1
     fig_num += 1
     b.ion()
     b.subplot(211)
@@ -415,17 +417,20 @@ if record_spikes:
 
 
 #------------------------------------------------------------------------------ 
-# create input population and connections from input populations 
+# create input population and connections from input populations 입력 모집단 및 입력 모집단에서 연결 생성
 #------------------------------------------------------------------------------ 
 pop_values = [0,0,0]
+# input_population_names = ['X']
 for i,name in enumerate(input_population_names):
-    input_groups[name+'e'] = b.PoissonGroup(n_input, 0)
+    input_groups[name+'e'] = b.PoissonGroup(n_input, 0) # PoissonGroup(num_inputs, rates=input_rate)
     rate_monitors[name+'e'] = b.PopulationRateMonitor(input_groups[name+'e'], bin = (single_example_time+resting_time)/b.second)
 
+# input_connection_names = ['XA']
 for name in input_connection_names:
     print 'create connections between', name[0], 'and', name[1]
+    # input_conn_names = ['ee_input']
     for connType in input_conn_names:
-        connName = name[0] + connType[0] + name[1] + connType[1]
+        connName = name[0] + connType[0] + name[1] + connType[1] # XeAe
         weightMatrix = get_matrix_from_file(weight_path + connName + ending + '.npy')
         connections[connName] = b.Connection(input_groups[connName[0:2]], neuron_groups[connName[2:4]], structure= conn_structure, 
                                                     state = 'g'+connType[0], delay=True, max_delay=delay[connType][1])
@@ -438,7 +443,7 @@ for name in input_connection_names:
 
 
 #------------------------------------------------------------------------------ 
-# run the simulation and set inputs
+# run the simulation and set inputs # 시뮬레이션을 실행하고 입력을 설정합니다.
 #------------------------------------------------------------------------------ 
 previous_spike_count = np.zeros(n_e)
 assignments = np.zeros(n_e)
@@ -452,6 +457,7 @@ if do_plot_performance:
 for i,name in enumerate(input_population_names):
     input_groups[name+'e'].rate = 0
 b.run(0)
+
 j = 0
 while j < (int(num_examples)):
     if test_mode:
